@@ -53,10 +53,10 @@ The dataset includes the following fields:
 <table>
   <tr>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/DuyLinh-Data/Data-Portfolio/main/images/purchase_by_hour.png" alt="Purchase by Hour" width="100%">
+      <img src="https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Product%20Sales%20Analysis/pur_hour.png" alt="Purchase by Hour" width="100%">
     </td>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/DuyLinh-Data/Data-Portfolio/main/images/top_products.png" alt="Top Products" width="100%">
+      <img src="https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Product%20Sales%20Analysis/top10product.png" alt="Top Products" width="100%">
     </td>
   </tr>
 </table>
