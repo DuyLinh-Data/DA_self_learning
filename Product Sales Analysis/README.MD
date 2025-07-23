@@ -1,61 +1,74 @@
 # 🛒 Active Product Sales Analysis
 
-This project analyzes a product transaction dataset to uncover valuable insights into customer behavior, purchasing trends, and product performance. Using Python and libraries like **Pandas** and **Matplotlib**, the primary focus is to identify the peak purchasing hours of the day, which is crucial information for e-commerce businesses to optimize their marketing and operational strategies.
+This project explores a real-world product transaction dataset to uncover insights into customer behavior, purchasing trends, and product performance.  
+Using Python with **Pandas**, **Matplotlib**, and **Seaborn**, the analysis focuses on **peak purchase hours** and customer patterns — crucial for optimizing marketing and operations.
 
 ---
 
-## 📊 Analysis Overview
+## 🔍 Project Highlights
 
-This project performs several analyses to extract meaningful insights from the transaction data:
-
-* **Purchase Time Analysis ⏰:** Identifies peak hours when customers make the most purchases and analyzes patterns by day or week to optimize marketing campaigns.
-* **Product Analysis 📦:** Determines the most popular products based on purchase frequency and analyzes which products are often bought together.
-* **Customer Analysis 👤:** Identifies top customers by the number of purchases or repeat buying behavior to spot high-value customers.
-* **Purchase Frequency Analysis 🔁:** Counts how often each customer makes a purchase and analyzes the time between purchases to predict future behavior.
-
----
-
-## 🛠️ Technologies Used
-
-* **Python**
-* **Pandas:** For handling and analyzing tabular data.
-* **NumPy:** For handling numerical operations.
-* **Matplotlib & Seaborn:** For data visualization and creating plots.
-* **Dateparser:** For parsing datetime strings.
-* **Jupyter Notebook:** For interactive analysis and presentation.
+| Feature                          | Description                                                                 |
+|----------------------------------|-----------------------------------------------------------------------------|
+| ⏰ **Peak Purchase Hours**       | Identify the busiest hours and days for customer purchases                 |
+| 📦 **Product Trend Analysis**    | Discover most frequently purchased items and item bundling patterns        |
+| 👤 **Customer Insights**         | Find top buyers and loyal customers for potential retention strategies     |
+| 🔁 **Purchase Frequency**        | Analyze time between repeat purchases to predict future behavior           |
 
 ---
 
-## 🚀 How to Run the Project
+## 💼 Business Impact
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://your-repository-link.git](https://your-repository-link.git)
-    cd your-repository-directory
-    ```
-
-2.  **Install necessary libraries:**
-    ```bash
-    pip install pandas numpy dateparser matplotlib seaborn
-    ```
-
-3.  **Run the Jupyter Notebook:**
-    Open and run the `Product Sales Analysis.ipynb` file in your Jupyter environment to see the analysis workflow and visualizations.
+> 📈 This analysis enables data-driven decisions for:
+> - Targeted ads during peak times
+> - Smart inventory planning
+> - Personalized offers for high-value customers
 
 ---
 
-## 💾 Dataset
+## 🛠️ Tech Stack
 
-The analysis is performed on an order details dataset. This dataset contains the following columns: `Name`, `Email`, `Product`, and `Transaction Date`.
-
-The key findings from the notebook indicate:
-- **Peak Purchase Hours:** The highest transaction volumes occur around **12:00 PM** and during the evening from **7:00 PM to 11:00 PM**.
-- **Customer Behavior:** Most customers make only 1-2 transactions.
-
-These insights suggest that marketing efforts and customer support should be intensified during these peak hours to maximize sales and customer satisfaction.
+- **Python**
+- **Pandas** for data manipulation  
+- **NumPy** for numerical analysis  
+- **Matplotlib & Seaborn** for visualizations  
+- **Dateparser** for flexible time parsing  
+- **Jupyter Notebook** for development
 
 ---
 
-## 📈 Key Visualization
+## 💾 Dataset Overview
 
-A key output of this analysis is a visualization of the **cumulative number of purchases by the hour of the day**, which clearly identifies the busiest hours.
+The dataset includes the following fields:
+- `Name`: Customer name  
+- `Email`: Customer email  
+- `Product`: Purchased item  
+- `Transaction Date`: Purchase timestamp
+
+> 🗂 Each record represents one transaction. We process time, group behavior, and product combinations to extract insights.
+
+---
+
+## 📊 Key Visualizations
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="https://raw.githubusercontent.com/DuyLinh-Data/Data-Portfolio/main/images/purchase_by_hour.png" alt="Purchase by Hour" width="100%">
+    </td>
+    <td width="50%">
+      <img src="https://raw.githubusercontent.com/DuyLinh-Data/Data-Portfolio/main/images/top_products.png" alt="Top Products" width="100%">
+    </td>
+  </tr>
+</table>
+
+> *Peak activity occurs around **12 PM** and between **7 PM – 11 PM**, providing ideal windows for marketing.*
+
+---
+
+## 🚀 How to Run This Project
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/DuyLinh-Data/Product-Sales-Analysis.git
+   cd Product-Sales-Analysis
+
