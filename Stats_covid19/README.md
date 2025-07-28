@@ -45,11 +45,10 @@ The data is cleaned by removing negative values and converting appropriate colum
 <table>
   <tr>
     <td width="50%">
-      <img src="<img width="1187" height="590" alt="image" src="https://github.com/user-attachments/assets/06b31469-b1aa-4b3e-b0a1-f3af2bfbea80" />
-" alt="Monthly COVID Trend" width="100%">
+      <img src="https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Stats_covid19/data/recover%20rate%20by%20region.png" alt="Country Comparison" width="100%">
     </td>
     <td width="50%">
-      <img src="https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/figs/country_compare.png" alt="Country Comparison" width="100%">
+      <img src="https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Stats_covid19/data/recover%20rate%20by%20who.png" alt="Country Comparison" width="100%">
     </td>
   </tr>
 </table>
