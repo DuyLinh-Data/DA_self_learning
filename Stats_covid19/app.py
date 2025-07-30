@@ -2,71 +2,62 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="COVID-19 Dashboard", layout="wide")
-st.title("🦠 Phân tích COVID-19 theo thời gian và địa lý")
+# Thiết lập giao diện
+st.set_page_config(page_title="Thống kê Covid-19", layout="wide")
+st.title("🦠 Phân tích Covid-19 toàn cầu")
 
-# Tải dữ liệu (dùng link raw hoặc file nội bộ nếu có)
+# Tải dữ liệu
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/world_covid19_data.csv"
+    url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
     df = pd.read_csv(url)
-    df['date'] = pd.to_datetime(df['date'])
+    df["Date"] = pd.to_datetime(df["Date"])
     return df
 
 df = load_data()
 
-# Kiểm tra cột dữ liệu có đúng không
-expected_cols = ['country_region', 'date', 'confirmed', 'recovered', 'deaths']
-if not all(col in df.columns for col in expected_cols):
-    st.error("⚠️ File dữ liệu không đúng định dạng. Cần các cột: " + ", ".join(expected_cols))
-    st.stop()
+# Sidebar lọc dữ liệu
+st.sidebar.header("📍 Bộ lọc dữ liệu")
+all_countries = df["Country/Region"].unique()
+selected_countries = st.sidebar.multiselect("Chọn quốc gia", options=all_countries, default=["Vietnam", "United States", "India"])
+metric = st.sidebar.selectbox("Chọn loại thống kê", ["Confirmed", "Recovered", "Deaths"])
 
-# Bộ lọc
-with st.sidebar:
-    st.header("🔍 Bộ lọc")
-    countries = st.multiselect("Chọn quốc gia", options=df['country_region'].unique(), default=['Vietnam', 'United States'])
-    date_range = st.date_input("Chọn khoảng thời gian", [df['date'].min(), df['date'].max()])
-
-# Lọc dữ liệu
-filtered_df = df[
-    (df['country_region'].isin(countries)) &
-    (df['date'] >= pd.to_datetime(date_range[0])) &
-    (df['date'] <= pd.to_datetime(date_range[1]))
-]
-
-# Hiển thị tổng số liệu
-st.subheader("📈 Tổng số ca (từ dữ liệu đã lọc)")
-col1, col2, col3 = st.columns(3)
-col1.metric("🦠 Ca nhiễm", f"{filtered_df['confirmed'].sum():,}")
-col2.metric("💪 Hồi phục", f"{filtered_df['recovered'].sum():,}")
-col3.metric("☠️ Tử vong", f"{filtered_df['deaths'].sum():,}")
+filtered_df = df[df["Country/Region"].isin(selected_countries)]
 
 # Biểu đồ theo thời gian
-st.subheader("📅 Diễn biến theo thời gian")
-fig = px.line(
+st.subheader(f"📈 {metric} theo thời gian")
+fig1 = px.line(
     filtered_df,
-    x="date",
-    y=["confirmed", "recovered", "deaths"],
-    color_discrete_map={"confirmed": "orange", "recovered": "green", "deaths": "red"},
-    labels={"value": "Số ca", "variable": "Loại", "date": "Ngày"},
-    title="Tình hình COVID-19 theo thời gian"
+    x="Date",
+    y=metric,
+    color="Country/Region",
+    title=f"{metric} theo thời gian",
+    markers=True,
 )
-st.plotly_chart(fig, use_container_width=True)
+fig1.update_layout(xaxis_title="Ngày", yaxis_title=metric)
+st.plotly_chart(fig1, use_container_width=True)
 
-# Biểu đồ theo quốc gia
-st.subheader("🌍 Tổng số ca theo quốc gia")
-agg = filtered_df.groupby("country_region")[["confirmed", "recovered", "deaths"]].sum().reset_index()
+# Dữ liệu mới nhất
+latest_date = df["Date"].max()
+latest_df = df[df["Date"] == latest_date]
 
-fig2 = px.bar(
-    agg.melt(id_vars="country_region", value_vars=["confirmed", "recovered", "deaths"]),
-    x="value",
-    y="country_region",
-    color="variable",
-    orientation="h",
-    title="Tổng số ca theo quốc gia",
-    labels={"value": "Số ca", "country_region": "Quốc gia", "variable": "Loại"}
+st.subheader(f"🗺️ {metric} theo bản đồ tại thời điểm {latest_date.date()}")
+fig2 = px.scatter_geo(
+    latest_df,
+    lat="Lat",
+    lon="Long",
+    color=metric,
+    size=metric,
+    hover_name="Country/Region",
+    projection="natural earth",
+    title=f"{metric} trên bản đồ",
 )
 st.plotly_chart(fig2, use_container_width=True)
 
-# Thông báo kết thúc
-st.success("✅ Phân tích hoàn tất! Bạn có thể tiếp tục lọc quốc gia và thời gian để khám phá thêm.")
+# Hiển thị bảng dữ liệu gốc (ẩn mặc định)
+with st.expander("📄 Hiển thị dữ liệu gốc"):
+    st.dataframe(df)
+
+# Ghi chú
+st.markdown("---")
+st.markdown("✅ Dữ liệu cập nhật từ GitHub. Bạn có thể chọn quốc gia và loại chỉ số để theo dõi xu hướng Covid-19 toàn cầu.")
