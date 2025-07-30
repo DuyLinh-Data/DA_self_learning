@@ -9,7 +9,7 @@ st.title("🦠 Thống kê COVID-19 theo quốc gia")
 # Load dữ liệu từ GitHub
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
+    url = "https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Stats_covid19/data/covid_grouped.csv"
     return pd.read_csv(url)
 
 df = load_data()
