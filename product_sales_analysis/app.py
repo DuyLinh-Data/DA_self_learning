@@ -52,10 +52,10 @@ ax1.set_ylabel("Sản phẩm")
 st.pyplot(fig1)
 
 # Doanh thu theo khu vực
-st.subheader("🌍 Doanh thu theo khu vực")
-revenue_by_region = filtered_df.groupby("Region")["Revenue"].sum().reset_index()
-fig2 = px.pie(revenue_by_region, names="Region", values="Revenue", title="Tỷ lệ doanh thu theo khu vực")
-st.plotly_chart(fig2)
+#st.subheader("🌍 Doanh thu theo khu vực")
+#revenue_by_region = filtered_df.groupby("Region")["Revenue"].sum().reset_index()
+#fig2 = px.pie(revenue_by_region, names="Region", values="Revenue", title="Tỷ lệ doanh thu theo khu vực")
+#st.plotly_chart(fig2)
 
 # Doanh thu theo nhân viên
 st.subheader("🧑‍💼 Doanh thu theo nhân viên bán hàng")
