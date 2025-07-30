@@ -2,57 +2,56 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Cấu hình trang
-st.set_page_config(page_title="Thống kê COVID-19", layout="wide")
-st.title("🦠 Thống kê COVID-19 theo quốc gia")
+# Cấu hình layout
+st.set_page_config(page_title="COVID-19 Confirmed Cases by WHO Region", layout="wide")
+st.title("🦠 Thống kê số ca nhiễm COVID-19 theo khu vực WHO")
 
-# Load dữ liệu từ GitHub
+# Tải dữ liệu từ raw GitHub
 @st.cache_data
 def load_data():
-    url = "https://github.com/DuyLinh-Data/DA_self_learning/blob/main/Stats_covid19/data/covid_grouped.csv"
+    url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
     return pd.read_csv(url)
 
 df = load_data()
 
-# Tiền xử lý: chọn các cột cần thiết
-columns_required = ["Country/Region", "Confirmed", "Recovered", "Deaths", "Date"]
+# Hiển thị ngày có trong dữ liệu
 df["Date"] = pd.to_datetime(df["Date"])
-df = df[columns_required]
-
-# Sidebar: chọn ngày
 min_date = df["Date"].min()
 max_date = df["Date"].max()
-selected_date = st.sidebar.slider("Chọn ngày", min_value=min_date, max_value=max_date, value=max_date)
 
-# Lọc dữ liệu theo ngày
-df_date = df[df["Date"] == selected_date]
+# Sidebar chọn ngày
+selected_date = st.sidebar.date_input("🗓 Chọn ngày", value=max_date, min_value=min_date, max_value=max_date)
+df_filtered = df[df["Date"] == pd.to_datetime(selected_date)]
 
-# Nhóm theo quốc gia
-df_country = df_date.groupby("Country/Region")[["Confirmed", "Recovered", "Deaths"]].sum().reset_index()
+# Kiểm tra tên cột khu vực WHO
+who_col = None
+for col in df_filtered.columns:
+    if col.lower() in ["who region", "who_region", "region"]:
+        who_col = col
+        break
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🟥 Ca nhiễm", "🟩 Phục hồi", "🖤 Tử vong"])
+if not who_col:
+    st.error("❌ Không tìm thấy cột khu vực WHO trong dữ liệu.")
+    st.stop()
 
-with tab1:
-    st.subheader("🟥 Tổng số ca nhiễm theo quốc gia")
-    fig = px.choropleth(df_country, locations="Country/Region", locationmode="country names",
-                        color="Confirmed", hover_name="Country/Region",
-                        color_continuous_scale="Reds", title="Ca nhiễm")
-    st.plotly_chart(fig, use_container_width=True)
+# Tổng hợp số ca nhiễm theo khu vực WHO
+region_data = df_filtered.groupby(who_col)["Confirmed"].sum().reset_index()
+region_data = region_data.sort_values("Confirmed", ascending=False)
 
-with tab2:
-    st.subheader("🟩 Tổng số ca phục hồi theo quốc gia")
-    fig = px.choropleth(df_country, locations="Country/Region", locationmode="country names",
-                        color="Recovered", hover_name="Country/Region",
-                        color_continuous_scale="Greens", title="Phục hồi")
-    st.plotly_chart(fig, use_container_width=True)
+# Vẽ biểu đồ
+fig = px.bar(region_data, 
+             x="Confirmed", 
+             y=who_col, 
+             orientation="h", 
+             title=f"Số ca nhiễm theo khu vực WHO - {selected_date}",
+             color="Confirmed",
+             color_continuous_scale="Reds")
 
-with tab3:
-    st.subheader("🖤 Tổng số ca tử vong theo quốc gia")
-    fig = px.choropleth(df_country, locations="Country/Region", locationmode="country names",
-                        color="Deaths", hover_name="Country/Region",
-                        color_continuous_scale="Greys", title="Tử vong")
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
+
+# Hiển thị bảng dữ liệu
+with st.expander("📄 Bảng dữ liệu chi tiết"):
+    st.dataframe(region_data)
 
 st.markdown("---")
-st.markdown(f"📅 Dữ liệu cập nhật đến: **{selected_date.date()}**")
+st.caption("Nguồn dữ liệu: GitHub - DA_self_learning")
