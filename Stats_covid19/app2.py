@@ -1,78 +1,81 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import plotly.express as px
 
-# --- Load dữ liệu từ GitHub và xử lý ---
+# Cấu hình layout
+st.set_page_config(
+    page_title="COVID-19 Pandemic Statistics by WHO Region",
+    layout="wide"
+)
+
+# Tiêu đề
+st.title("🌍 COVID-19 WHO Dashboard")
+st.markdown("""
+Phân tích thống kê **ca nhiễm**, **phục hồi**, **tử vong** theo vùng địa lý WHO từ dữ liệu cập nhật.  
+Sử dụng biểu đồ thời gian để theo dõi diễn biến dịch bệnh toàn cầu.
+""")
+
+# Load dữ liệu từ GitHub
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
     df = pd.read_csv(url)
-
-    # Làm sạch tên cột: bỏ khoảng trắng, đưa về chữ thường
-    df.columns = df.columns.str.strip().str.lower()
-
-    # Kiểm tra cột 'date' có tồn tại không
-    if 'date' not in df.columns:
-        st.error("❌ Không tìm thấy cột 'date' trong dữ liệu. Kiểm tra lại tên cột trong file CSV.")
-        return pd.DataFrame()
-
-    # Chuyển cột 'date' sang kiểu datetime
-    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df["Date"] = pd.to_datetime(df["Date"])
     return df
 
-# --- Load dữ liệu ---
 df = load_data()
 
-# --- Kiểm tra dữ liệu trước khi vẽ ---
-if not df.empty:
-    st.title("📊 Phân tích dữ liệu COVID-19 toàn cầu")
+# Kiểm tra tên cột vùng WHO
+who_col = None
+for col in df.columns:
+    if col.lower() in ["who region", "who_region", "region"]:
+        who_col = col
+        break
 
-    # --- Biểu đồ theo ngày ---
-    df_daily = df.groupby('date')[['confirmed', 'deaths', 'recovered']].sum().reset_index()
+if not who_col:
+    st.error("❌ Không tìm thấy cột khu vực WHO trong dữ liệu.")
+    st.stop()
 
-    st.subheader("1. Biểu đồ theo ngày")
-    plt.figure(figsize=(12, 6))
-    plt.plot(df_daily['date'], df_daily['confirmed'], label='Confirmed', color='blue')
-    plt.plot(df_daily['date'], df_daily['deaths'], label='Deaths', color='red')
-    plt.plot(df_daily['date'], df_daily['recovered'], label='Recovered', color='green')
-    plt.title('COVID-19 Cases by Day')
-    plt.xlabel('Date')
-    plt.ylabel('Number of Cases')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    st.pyplot(plt)
-    plt.clf()
+# Sidebar lọc dữ liệu
+with st.sidebar:
+    st.header("⚙️ Bộ lọc")
+    regions = sorted(df[who_col].dropna().unique())
+    selected_region = st.selectbox("🌐 Chọn vùng WHO", ["Tất cả"] + regions)
+    date_range = st.date_input("📅 Khoảng thời gian", 
+                               value=[df["Date"].min(), df["Date"].max()],
+                               min_value=df["Date"].min(),
+                               max_value=df["Date"].max())
 
-    # --- Biểu đồ theo tháng ---
-    st.subheader("2. Biểu đồ theo tháng")
-    df['month_year'] = df['date'].dt.to_period('M').astype(str)
-    df_monthly = df.groupby('month_year')[['confirmed', 'deaths', 'recovered']].sum().reset_index()
+# Lọc dữ liệu theo vùng và khoảng thời gian
+start_date, end_date = pd.to_datetime(date_range)
+df_filtered = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(df_monthly['month_year'], df_monthly['confirmed'], label='Confirmed', color='blue', marker='o')
-    plt.plot(df_monthly['month_year'], df_monthly['deaths'], label='Deaths', color='red', marker='o')
-    plt.plot(df_monthly['month_year'], df_monthly['recovered'], label='Recovered', color='green', marker='o')
-    plt.title('COVID-19 Cases by Month')
-    plt.xlabel('Month-Year')
-    plt.ylabel('Number of Cases')
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x):,}'))
-    st.pyplot(plt)
-    plt.clf()
+if selected_region != "Tất cả":
+    df_filtered = df_filtered[df_filtered[who_col] == selected_region]
 
-    # --- Ngày đạt đỉnh ---
-    st.subheader("3. 📍 Ngày đạt đỉnh")
-    peak_confirmed = df_daily.loc[df_daily['confirmed'].idxmax()]
-    peak_deaths = df_daily.loc[df_daily['deaths'].idxmax()]
-    peak_recovered = df_daily.loc[df_daily['recovered'].idxmax()]
+# Tổng hợp theo ngày
+df_summary = df_filtered.groupby("Date")[["Confirmed", "Recovered", "Deaths"]].sum().reset_index()
 
-    st.markdown(f"📈 **Peak Confirmed:** {peak_confirmed['date'].date()} — {peak_confirmed['confirmed']:,} cases")
-    st.markdown(f"💀 **Peak Deaths:** {peak_deaths['date'].date()} — {peak_deaths['deaths']:,} deaths")
-    st.markdown(f"💚 **Peak Recovered:** {peak_recovered['date'].date()} — {peak_recovered['recovered']:,} recoveries")
-else:
-    st.warning("Không có dữ liệu để hiển thị.")
+# Hiển thị các chỉ số tổng
+latest = df_summary.iloc[-1]
+st.subheader(f"📌 Tổng kết đến ngày {latest['Date'].date()}:")
+col1, col2, col3 = st.columns(3)
+col1.metric("🦠 Tổng ca nhiễm", f"{int(latest['Confirmed']):,}")
+col2.metric("💚 Tổng phục hồi", f"{int(latest['Recovered']):,}")
+col3.metric("⚰️ Tổng tử vong", f"{int(latest['Deaths']):,}")
+
+# Biểu đồ diễn biến
+st.markdown("### 📈 Diễn biến theo thời gian")
+fig = px.line(df_summary, x="Date", 
+              y=["Confirmed", "Recovered", "Deaths"],
+              labels={"value": "Số ca", "Date": "Ngày", "variable": "Loại"},
+              title="Thống kê COVID-19 theo thời gian")
+
+st.plotly_chart(fig, use_container_width=True)
+
+# Bảng dữ liệu chi tiết
+with st.expander("📄 Xem bảng dữ liệu chi tiết"):
+    st.dataframe(df_summary)
+
+st.markdown("---")
+st.caption("Nguồn dữ liệu: GitHub - [DuyLinh-Data/DA_self_learning](https://github.com/DuyLinh-Data/DA_self_learning)")
