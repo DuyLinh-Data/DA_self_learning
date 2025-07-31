@@ -1,57 +1,64 @@
-import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import streamlit as st
 
-# Title
-st.title("🌍 COVID-19 Pandemic Statistics Dashboard")
-st.markdown("Hiển thị dữ liệu theo vùng địa lý WHO. Dữ liệu lấy từ WHO - cập nhật từ GitHub.")
+# Giả sử df đã được load sẵn từ load_data() hoặc trực tiếp
+# Nếu chưa load, bạn có thể load trong đây:
 
-# Đọc dữ liệu từ GitHub
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
-    df = pd.read_csv(url, parse_dates=["date"])
+    df = pd.read_csv(url)
+    df['date'] = pd.to_datetime(df['date'])  # chuyển cột date sang datetime
     return df
 
 df = load_data()
 
-# Sidebar: Chọn vùng WHO
-regions = sorted(df["WHO Region"].dropna().unique())
-selected_regions = st.sidebar.multiselect("🌐 Chọn vùng WHO:", regions, default=regions)
+# --- Chart 1: Daily statistics ---
+df_daily = df.groupby('date')[['confirmed', 'deaths', 'recovered']].sum().reset_index()
 
-# Lọc theo vùng
-df_filtered = df[df["WHO Region"].isin(selected_regions)]
+plt.figure(figsize=(12, 6))
+plt.plot(df_daily['date'], df_daily['confirmed'], label='Confirmed', color='blue')
+plt.plot(df_daily['date'], df_daily['deaths'], label='Deaths', color='red')
+plt.plot(df_daily['date'], df_daily['recovered'], label='Recovered', color='green')
+plt.title('COVID-19 Cases by Day')
+plt.xlabel('Date')
+plt.ylabel('Number of Cases')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+st.pyplot(plt)  # Hiển thị trong Streamlit
+plt.clf()       # Xóa figure để tránh chồng chéo
 
-# Sidebar: Chọn ngày và thời gian
-min_date = df_filtered["date"].min().date()
-max_date = df_filtered["date"].max().date()
-start_date = st.sidebar.date_input("📅 Ngày bắt đầu:", min_value=min_date, max_value=max_date, value=min_date)
-end_date = st.sidebar.date_input("📅 Ngày kết thúc:", min_value=min_date, max_value=max_date, value=max_date)
+# --- Chart 2: Monthly-Yearly statistics ---
+df['month_year'] = df['date'].dt.to_period('M')
+df_monthly = df.groupby('month_year')[['confirmed', 'deaths', 'recovered']].sum().reset_index()
+df_monthly['month_year'] = df_monthly['month_year'].astype(str)
 
-# Xử lý ngày
-df_filtered = df_filtered[
-    (df_filtered["date"].dt.date >= start_date) & 
-    (df_filtered["date"].dt.date <= end_date)
-]
+plt.figure(figsize=(12, 6))
+plt.plot(df_monthly['month_year'], df_monthly['confirmed'], label='Confirmed', color='blue', marker='o')
+plt.plot(df_monthly['month_year'], df_monthly['deaths'], label='Deaths', color='red', marker='o')
+plt.plot(df_monthly['month_year'], df_monthly['recovered'], label='Recovered', color='green', marker='o')
+plt.title('COVID-19 Cases by Month')
+plt.xlabel('Month-Year')
+plt.ylabel('Number of Cases')
+plt.xticks(rotation=45)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
 
-# Tùy chọn hiển thị dạng biểu đồ
-metric = st.radio("📊 Chọn loại dữ liệu:", ("Confirmed", "Recovered", "Deaths"))
+# Tắt scientific notation trên trục y
+plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x):,}'))
 
-# Tổng hợp dữ liệu
-df_grouped = df_filtered.groupby(["date", "WHO Region"])[metric].sum().reset_index()
+st.pyplot(plt)
+plt.clf()
 
-# Vẽ biểu đồ
-fig = px.line(
-    df_grouped,
-    x="date",
-    y=metric,
-    color="WHO Region",
-    title=f"{metric} cases by WHO Region over Time",
-    markers=True
-)
+# --- Identify the peak day ---
+peak_confirmed = df_daily.loc[df_daily['confirmed'].idxmax()]
+peak_deaths = df_daily.loc[df_daily['deaths'].idxmax()]
+peak_recovered = df_daily.loc[df_daily['recovered'].idxmax()]
 
-st.plotly_chart(fig, use_container_width=True)
-
-# Hiển thị dữ liệu gốc nếu muốn
-if st.checkbox("📄 Hiển thị bảng dữ liệu gốc"):
-    st.dataframe(df_filtered)
+st.write(f"📈 Peak Confirmed: {peak_confirmed['date'].date()} with {peak_confirmed['confirmed']:,} cases")
+st.write(f"💀 Peak Deaths: {peak_deaths['date'].date()} with {peak_deaths['deaths']:,} deaths")
+st.write(f"💚 Peak Recovered: {peak_recovered['date'].date()} with {peak_recovered['recovered']:,} recoveries")
