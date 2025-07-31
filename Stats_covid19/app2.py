@@ -2,80 +2,56 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Cấu hình layout
-st.set_page_config(
-    page_title="COVID-19 Pandemic Statistics by WHO Region",
-    layout="wide"
-)
+# Title
+st.title("🌍 COVID-19 Pandemic Statistics Dashboard")
+st.markdown("Hiển thị dữ liệu theo vùng địa lý WHO. Dữ liệu lấy từ WHO - cập nhật từ GitHub.")
 
-# Tiêu đề
-st.title("🌍 COVID-19 WHO Dashboard")
-st.markdown("""
-Phân tích thống kê **ca nhiễm**, **phục hồi**, **tử vong** theo vùng địa lý WHO từ dữ liệu cập nhật.  
-Sử dụng biểu đồ thời gian để theo dõi diễn biến dịch bệnh toàn cầu.
-""")
-
-# Load dữ liệu từ GitHub
+# Đọc dữ liệu từ GitHub
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/DuyLinh-Data/DA_self_learning/main/Stats_covid19/data/covid_grouped.csv"
-    df = pd.read_csv(url)
-    df["Date"] = pd.to_datetime(df["Date"])
+    df = pd.read_csv(url, parse_dates=["date"])
     return df
 
 df = load_data()
 
-# Kiểm tra tên cột vùng WHO
-who_col = None
-for col in df.columns:
-    if col.lower() in ["who region", "who_region", "region"]:
-        who_col = col
-        break
+# Sidebar: Chọn vùng WHO
+regions = sorted(df["WHO Region"].dropna().unique())
+selected_regions = st.sidebar.multiselect("🌐 Chọn vùng WHO:", regions, default=regions)
 
-if not who_col:
-    st.error("❌ Không tìm thấy cột khu vực WHO trong dữ liệu.")
-    st.stop()
+# Lọc theo vùng
+df_filtered = df[df["WHO Region"].isin(selected_regions)]
 
-# Sidebar lọc dữ liệu
-with st.sidebar:
-    st.header("⚙️ Bộ lọc")
-    regions = sorted(df[who_col].dropna().unique())
-    selected_region = st.selectbox("🌐 Chọn vùng WHO", ["Tất cả"] + regions)
-    date_range = st.date_input("📅 Khoảng thời gian", 
-                               value=[df["Date"].min(), df["Date"].max()],
-                               min_value=df["Date"].min(),
-                               max_value=df["Date"].max())
+# Sidebar: Chọn ngày và thời gian
+min_date = df_filtered["date"].min().date()
+max_date = df_filtered["date"].max().date()
+start_date = st.sidebar.date_input("📅 Ngày bắt đầu:", min_value=min_date, max_value=max_date, value=min_date)
+end_date = st.sidebar.date_input("📅 Ngày kết thúc:", min_value=min_date, max_value=max_date, value=max_date)
 
-# Lọc dữ liệu theo vùng và khoảng thời gian
-start_date, end_date = pd.to_datetime(date_range)
-df_filtered = df[(df["Date"] >= start_date) & (df["Date"] <= end_date)]
+# Xử lý ngày
+df_filtered = df_filtered[
+    (df_filtered["date"].dt.date >= start_date) & 
+    (df_filtered["date"].dt.date <= end_date)
+]
 
-if selected_region != "Tất cả":
-    df_filtered = df_filtered[df_filtered[who_col] == selected_region]
+# Tùy chọn hiển thị dạng biểu đồ
+metric = st.radio("📊 Chọn loại dữ liệu:", ("Confirmed", "Recovered", "Deaths"))
 
-# Tổng hợp theo ngày
-df_summary = df_filtered.groupby("Date")[["Confirmed", "Recovered", "Deaths"]].sum().reset_index()
+# Tổng hợp dữ liệu
+df_grouped = df_filtered.groupby(["date", "WHO Region"])[metric].sum().reset_index()
 
-# Hiển thị các chỉ số tổng
-latest = df_summary.iloc[-1]
-st.subheader(f"📌 Tổng kết đến ngày {latest['Date'].date()}:")
-col1, col2, col3 = st.columns(3)
-col1.metric("🦠 Tổng ca nhiễm", f"{int(latest['Confirmed']):,}")
-col2.metric("💚 Tổng phục hồi", f"{int(latest['Recovered']):,}")
-col3.metric("⚰️ Tổng tử vong", f"{int(latest['Deaths']):,}")
-
-# Biểu đồ diễn biến
-st.markdown("### 📈 Diễn biến theo thời gian")
-fig = px.line(df_summary, x="Date", 
-              y=["Confirmed", "Recovered", "Deaths"],
-              labels={"value": "Số ca", "Date": "Ngày", "variable": "Loại"},
-              title="Thống kê COVID-19 theo thời gian")
+# Vẽ biểu đồ
+fig = px.line(
+    df_grouped,
+    x="date",
+    y=metric,
+    color="WHO Region",
+    title=f"{metric} cases by WHO Region over Time",
+    markers=True
+)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# Bảng dữ liệu chi tiết
-with st.expander("📄 Xem bảng dữ liệu chi tiết"):
-    st.dataframe(df_summary)
-
-st.markdown("---")
-st.caption("Nguồn dữ liệu: GitHub - [DuyLinh-Data/DA_self_learning](https://github.com/DuyLinh-Data/DA_self_learning)")
+# Hiển thị dữ liệu gốc nếu muốn
+if st.checkbox("📄 Hiển thị bảng dữ liệu gốc"):
+    st.dataframe(df_filtered)
